@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/pivottable/1.6.3/pivot.min.css">
+
+  </head>
+  <body>
+    <style>.container { width: 750px; white-space:nowrap;} #pivot-table {padding-left: 10%; padding-right: 10%}</style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pivottable/1.6.3/pivot.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/0.71/jquery.csv-0.71.min.js"></script>
+
+    <script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+    <script>$( document ).ready(function() {
+          $.ajax({
+              type:"GET",
+                  url: $SCRIPT_ROOT + '/_get_sandbox_rec_leaders_pivot',
+                  success: function(result) {
+                      $('#pivot-table').pivotUI($.csv.toArrays(result), {
+                        rows: ["slug_name", "rec"]//,
+                        //sorters: rec
+                      }
+                      );
+                      $('#pivot-table').show();
+                  }
+          });
+          });
+    </script>
+
+  <head>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
+          rel="stylesheet">
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h3 class="text-muted">Reception Leaders 2017</h3>
+      </div>
+    </div>
+  </body>
+
+  <p><br/>
+  <div id="pivot-table">
+  </div>
+
+</body>
+</html>

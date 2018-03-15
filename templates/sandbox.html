@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.10/css/jquery.dataTables.min.css">
+  </head>
+  <body>
+    <style>.container { width: 750px; white-space:nowrap;} #coxmedia{display:none;} #metadata-table{display:none; padding-right:10%; padding-left:10%;}</style>
+
+    <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="//cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+    <script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+
+    <script>$( document ).ready(function() {
+      $('select[name=command]').change(function(e){
+        if ($('select[name=command]').val() != 'default'){
+          $('#upload').attr('action', 'sandbox');
+          $('#upload_btn').prop('disabled', false);
+        } else {
+          $('#upload_btn').prop('disabled', true);
+        }
+      })});</script>
+
+
+    <div class="container">
+      <div class="header">
+        <h3 class="text-muted">SANDOX!</h3>
+      </div>
+      <hr/>
+
+      <div class="intro">
+        <h4 class="text-muted"> <br/>Use the buttons below to do stuff! </h4><br/>
+      </div>
+
+      <div id="results">
+        <!--if successes & failures params are passed, report which files succeeded & failed -->
+        {% if ran > 0 %}
+          {% for s in ran_commands %}
+            Successfully performed {{ s }} action.<br/>
+          {% endfor %}
+        {% endif %}
+        {% if ran < 0 %}
+          {% for f in ran_commands %}
+            Failed to perform {{ f }} action.<br/>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <div>
+      <form class="form-horizontal" id="upload" action="sandbox" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="command" class="col-sm-3 control-label">Choose an action.</label>
+          <div class="col-sm-9">
+            <select class="form-control" name="command">
+              <option value="default">Select...</option>
+              {% for c in command_list %}
+                <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="col-md-8 col-md-offset-5">
+            <button type="submit" id="upload_btn" value="Do Action" class="btn btn-primary" disabled>Do Action</button>
+          </div>
+        </div>
+      </form>
+      </div>
+    </div>
+  </body>
+</html>
+ 
