@@ -16,5 +16,5 @@ IP address and port (ie localhost:8080) in your web-browser.
 
 
 ## flask_ff 2.0 updates will include
-adding database configuration so users don't need to adjust DBconnect class
-requirements file for easy python installs
+(1) adding database configuration so users don't need to adjust DBconnect class
+(2) add requirements file for easy python installs
