@@ -8,19 +8,23 @@ import pandas as pd
 
 class Airyards(DBConnect):
 
-    json_cols = ['full_name', 'slug_name','position', 'team', 'rec_yards', 'rec',
-                 'week', 'ms_air_yards', 'tm_airyards', 'yac',
-                 'target_share', 'tm_att', 'aypt', 'air_yards', 'wopr', 'tar',
-                 'racr', 'year', 'half_ppr', 'full_ppr', 'no_ppr'] ## need a list to preserve order
+    json_cols = [ 'player_id', 'full_name', 'slug_name', 'team', 'position',
+                  'week', 'rec', 'tar', 'rec_yards', 'air_yards', 'racr',
+                  'yac', 'td', 'ms_air_yards', 'team_air', 'target_share',
+                  'tm_att', 'aypt', 'wopr', 'rush_td',  'rush_yards', 'year'] ## need a list to preserve order
 
-    json_col_type = {'full_name': str, 'slug_name':str, 'position':str, 'team':str, 'rec_yards': float,
-                     'rec':float, 'week': int, 'ms_air_yards': float,
-                     'tm_airyards':float, 'yac':float, 'target_share':float,
-                     'tm_att':float, 'aypt': float,'air_yards':float, 'wopr':float, 'tar':float,
-                     'racr': float, 'year':int, 'half_ppr':float, 'full_ppr':float,  'no_ppr':float}
+    str_cols = ['player_id', 'full_name', 'slug_name', 'team', 'position'] ##string columns
+    float_cols = ['racr', 'tm_att', 'ms_air_yards', 'target_share', 'wopr',
+                  'aypt', 'team_air'] ## float columns
+    cols = str_cols + float_cols
+    int_cols = set(json_cols) - set(cols) ## int columns (the rest)
 
-    half_ppr = {'rec_yards': 0.1, 'rec': 0.5}
-    full_ppr = {'rec_yards': 0.1, 'rec': 1}
+    json_col_type = {i: str for i in str_cols}
+    json_col_type.update({i: float for i in float_cols})
+    json_col_type.update({i: int for i in int_cols})
+
+    half_ppr = {'rec_yards': 0.1, 'rec': 0.5} ## deprecated attribute
+    full_ppr = {'rec_yards': 0.1, 'rec': 1} ## deprecated attribute
 
     def __init__(self, year=2017):
         if year is not None:
@@ -49,27 +53,28 @@ class Airyards(DBConnect):
     def create_airyards_table(self):
         self.check_connection()
         to_do = 'CREATE TABLE "public"."airyards" (' \
+                '"player_id" varchar(100) COLLATE "default",' \
                 '"full_name" varchar(100) COLLATE "default",' \
-                'slug_name varchar(100) COLLATE "default",' \
-                '"position" varchar(100) COLLATE "default",' \
+                '"slug_name" varchar(100) COLLATE "default",' \
                 '"team" varchar(100) COLLATE "default",' \
-                '"rec_yards" FLOAT,' \
-                '"rec" FLOAT,' \
+                '"position" varchar(100) COLLATE "default",' \
                 '"week" int4 NOT NULL,' \
+                '"rec" int4,' \
+                '"tar" int4,' \
+                '"rec_yards" int4,' \
+                '"air_yards" int4,' \
+                '"racr" FLOAT,' \
+                '"yac" int4,' \
+                '"td" int4,' \
                 '"ms_air_yards" FLOAT,' \
-                '"tm_airyards" FLOAT,' \
-                '"yac" FLOAT,' \
+                '"team_air" FLOAT,' \
                 '"target_share" FLOAT,' \
                 '"tm_att" FLOAT,' \
                 '"aypt" FLOAT,' \
-                '"air_yards" FLOAT,' \
                 '"wopr" FLOAT,' \
-                '"tar" FLOAT,'\
-                '"racr" FLOAT,' \
-                '"year" INT,' \
-                '"half_ppr" FLOAT,' \
-                '"full_ppr" FLOAT,' \
-                '"no_ppr" FLOAT);'
+                '"rush_td" int4,' \
+                '"rush_yards" int4,'\
+                '"year" int4 NOT NULL);'
         with self.connection.cursor() as cursor:
             cursor.execute(to_do)
         self.connection.commit()
@@ -119,43 +124,41 @@ class Airyards(DBConnect):
         for d in self.data_json:
             d['year'] = self.year
             d['slug_name'] = self._slug_str(d['full_name'])
-            d.update(self.calc_fp(d))
+            ##d.update(self.calc_fp(d)) ## no longer calculating fantatsy pts
 
 
     def insert_into_db(self, data_json):
-        if data_json is None:
-            msg = 'Data is None type'
+        if data_json in [None, []]:
+            msg = 'No Data Received...'
             raise Exception(msg)
         else:
-            insert_statement = 'INSERT INTO airyards (full_name, ' \
-                               'slug_name, ' \
-                               'position, ' \
-                               'team, ' \
-                               'rec_yards, ' \
-                               'rec,' \
-                               'week, ' \
-                               'ms_air_yards, ' \
-                               'tm_airyards, ' \
-                               'yac, ' \
-                               'target_share, ' \
-                               'tm_att, ' \
-                               'aypt, ' \
-                               'air_yards, ' \
-                               'wopr, ' \
+            self.check_data_json_cols()
+            insert_statement = 'INSERT INTO airyards (player_id, '\
+                               'full_name, '\
+                               'slug_name, '\
+                               'team, '\
+                               'position, '\
+                               'week, '\
+                               'rec, '\
                                'tar, '\
-                               'racr, ' \
-                               'year, ' \
-                               'half_ppr, ' \
-                               'full_ppr, ' \
-                               'no_ppr) VALUES ('
+                               'rec_yards, '\
+                               'air_yards, '\
+                               'racr, '\
+                               'yac, '\
+                               'td, '\
+                               'ms_air_yards, '\
+                               'team_air, '\
+                               'target_share, '\
+                               'tm_att, '\
+                               'aypt, '\
+                               'wopr, '\
+                               'rush_td, '\
+                               'rush_yards, '\
+                               'year) VALUES ('
         with self.connection.cursor() as cursor:
             for x in data_json:
-                try:
-                    print('Inserting {}'.format(x['full_name']))
-                    v_str = ','.join([self.pickformat(i, x[i]) for i in self.json_cols])
-                except Exception as e:
-                    print(e)
-                pass ## eww
+                print('Inserting {}'.format(x['full_name']))
+                v_str = ','.join([self.pickformat(i, x[i]) for i in self.json_cols])
                 to_do = insert_statement + v_str + ')'
                 print(to_do)
                 cursor.execute(to_do)
@@ -166,7 +169,7 @@ class Airyards(DBConnect):
 
     def calc_fp(self, x):
         """
-        Method that calculates 1/2 and full ppr fantasy points
+        Method that calculates 1/2 and full ppr fantasy points -- method no longer used !!!
         :param x:
         :return: {'half_ppr':value, 'full_ppr':value}
         """
@@ -202,6 +205,19 @@ class Airyards(DBConnect):
         else:
             res = str(val)
         return(res)
+
+
+    def check_data_json_cols(self):
+        """
+        Method that checks to make sure all of self.json_cols are in self.data_json (will only check 1st record)
+        :param self:
+        :return: None
+        """
+        missing_fields = set(self.json_cols) - set(self.data_json[0].keys())
+        if len(missing_fields) > 0:
+            msg = 'Json Data is missing fields: {}'.format(' ,'.join(missing_fields))
+            raise Exception(msg)
+        pass
 
 
     def sandbox_reception_leaders(self, year = 2017):
